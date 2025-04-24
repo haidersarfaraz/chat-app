@@ -10,7 +10,7 @@ const io = new Server(server, {
   }
 });
 
-// Store messages for each room
+
 const roomMessages = new Map();
 
 io.on('connection', (socket) => {
@@ -20,7 +20,6 @@ io.on('connection', (socket) => {
     socket.join(room);
     console.log(`User ${socket.id} joined room: ${room}`);
     
-    // Send existing room messages to the new user
     const messages = roomMessages.get(room) || [];
     if (messages.length > 0) {
       socket.emit('receive_message', ...messages);
@@ -28,25 +27,21 @@ io.on('connection', (socket) => {
   });
 
   socket.on('send_message', (data) => {
-    // Ensure timestamp exists
     if (!data.timestamp) {
       data.timestamp = Date.now();
     }
     
     console.log('Message received:', data);
     
-    // Store message in room history
     if (!roomMessages.has(data.room)) {
       roomMessages.set(data.room, []);
     }
     roomMessages.get(data.room).push(data);
     
-    // Limit stored messages to prevent memory issues
     if (roomMessages.get(data.room).length > 100) {
       roomMessages.get(data.room).shift();
     }
     
-    // Broadcast message to room
     io.to(data.room).emit('receive_message', data);
   });
 
